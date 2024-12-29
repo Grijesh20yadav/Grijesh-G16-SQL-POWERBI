@@ -1,0 +1,179 @@
+1. Countries and their continents. Order the results by continent names.
+	select   c.contid,
+   cs.continent, c.continent,cs.countryname
+from continents c
+join countries cs on c.contid=cs.continent
+order by 3;
+
+
+2. Number of countries within each continent
+	select   c.continent, count(cs.countryname) as number_of_countries
+from continents c
+join countries cs on c.contid=cs.continent
+group by c.continent;
+
+3. countries with no car makers?
+
+	select  c.countryname, count(cm.maker) as no_of_car_maker
+from countries c
+left outer join car_makers cm on c.countryid =cm.country
+group by countryname
+    having count(cm.maker)= 0;
+
+
+4. List of Car makers from Japan
+
+	select  c.countryname, 
+    cm.maker as car_makers_in_Japan
+from countries c
+join car_makers cm on c.countryid =cm.country
+where c.countryname = 'japan';
+
+
+5. List of Car makers from France and USA
+
+	select  c.countryname, 
+    cm.maker as car_makers_in_Japan
+from countries c
+join car_makers cm on c.countryid =cm.country
+where c.countryname in ('france','usa') ;
+
+
+6. Country and continent of Volvo car maker
+
+ 	select co.continent,c.countryname, 
+    cm.maker
+from continents co
+inner join countries c on co.contid=c.continent
+join car_makers cm on c.countryid =cm.country
+where cm.maker = 'volvo';
+
+7. Car models from 'Ford Motor Company
+
+ 	select m.modelid, 
+    c.model, c.Descr
+from model_details m 
+right join car_names c on m.model=c.model
+where c.model = 'ford';
+
+8. How many car models are made by Germany?
+
+	select c.countryname,
+    count(m.model) as no_of_model
+from countries c
+inner join car_makers cm on c.countryid =cm.country
+inner join model_details m on cm.id=m.maker
+group by countryname
+having c.countryname = 'germany';
+
+
+9. Car models made by Japan along with maker details.
+
+	select c.countryname,
+    cm.fullname as Maker_Details, 
+    m.model
+from countries c
+inner join car_makers cm on c.countryid =cm.country
+inner join model_details m on cm.id=m.maker
+where c.countryname = 'japan';
+
+10. Which car models have highest and lowest values of below attributes. Extract the car maker and geography (country and continent) information also:
+
+a. Mpg b. Cylinders c. Edispl d. Horsepower e. Weight f. Accel
+
+	select c.continent, cs.countryname, md.model,cm.fullname,
+ min(cd.mpg), max(cd.mpg),
+	min(cd.cylinders), max(cd.cylinders),
+    min(cd.edispl), max(cd.edispl),
+    min(cd.horsepower), max(cd.horsepower),
+    min(cd.weight), max(cd.weight),
+    min(cd.accel), max(cd.accel)  
+      
+from continents c
+right join countries cs on c.contid=cs.continent
+join car_makers cm on cs.countryid=cm.country
+join model_details md on cm.id=md.maker
+join car_names cn on md.model=cn.model
+join car_details cd on cn.id=cd.id
+    group by c.continent,cs.countryname, md.model, cm.fullname;
+
+
+11. In which year most cars were made?
+
+	select year, count(*) as no_of_year
+from car_details
+group by year   
+order by 2 desc;
+
+12. Which year had less cars made?
+
+	select year, count(*) as no_of_year
+from car_details
+group by year   
+order by 2;
+
+13. Min, Max and Average of below attributes around the year(s):
+
+a. Mpg b. Cylinders c. Edispl d. Horsepower e. Weight f. Accel
+
+	select year, min(mpg), max(mpg), avg(mpg), 
+    min(cylinders), max(cylinders), avg(cylinders) 
+from car_details
+group by year;   
+
+select year, 
+   min(edispl), max(edispl), avg(edispl),
+    min(horsepower), max(horsepower), avg(horsepower)
+  from car_details
+group by year;
+
+select year, 
+   min(weight), max(weight), avg(weight), 
+    min(accel), max(accel), avg(accel) 
+  from car_details
+group by year;
+
+14. Please carry out a small statistical analysis around (1) Horsepower (2) Weight (3) Accel. Try calculating the mean, median and standard deviation. Use SQL queries to extract theve measures. What do these measures convey about horsepower and weight of the cars data? Share SQLs and few bullets on your understanding on the values captured for mean, median and standard deviation
+
+select avg(horsepower), median (horsepower), stddev(horsepower),
+avg(weight), median (weight), stddev(weight), 
+avg(accel), median (accel), stddev(accel)
+from car_details;
+
+15. Draw the entity-relationship (ER) model depicting car database tables, PK and FK (uc., relationships between them) on a plain paper using pen/pencil. Share the screenshot (ensure picture is clearly visible) and share.
+
+1.Continents:
+-ContID (Primary Key)
+-Continent
+
+2.Countries:
+-CountryID (Primary Key)
+-CountryName
+
+3.Continent (Foreign Key referencing Continents.ContID)
+-Car_Makers:
+-ID (Primary Key)
+-Maker
+-FullName
+-Country (Foreign Key referencing Countries.CountryID)
+    
+4.Model_Details:
+-ModelID (Primary Key)
+-Maker (Foreign Key referencing Car_Makers.ID)
+-Model
+    
+5.Car_Names:
+-ID (Primary Key)
+-Model (Foreign Key referencing Model_Details.Model)
+-Descr
+
+6.Car_Details:
+-ID (Primary Key)
+-mpg
+-cylinders
+-edispl
+-horsepower
+-weight
+-accel
+-year
+-ID (Foreign Key referencing
