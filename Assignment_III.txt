@@ -1,0 +1,164 @@
+Write SQL queries for the below mentioned requirements to extract:
+
+1. Top 3 customers based on the amount spent.
+
+	select * from ( 
+select
+    c.CUSTOMER_ID,
+    c.CUST_FIRST_NAME,
+    c.CUST_LAST_NAME,
+    SUM(oi.UNIT_PRICE * oi.QUANTITY) AS total_spents,
+    row_number() OVER (ORDER BY SUM(oi.UNIT_PRICE * oi.QUANTITY) DESC) as row_num
+FROM demo_customers c
+JOIN demo_orders o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+JOIN demo_order_items oi ON o.ORDER_ID = oi.ORDER_ID
+GROUP BY c.CUSTOMER_ID, c.CUST_FIRST_NAME, c.CUST_LAST_NAME
+    )
+where row_num <= 3;
+
+
+2. Top 3 customers based on the number of orders.
+
+	select * from ( 
+select
+    c.CUSTOMER_ID,
+    c.CUST_FIRST_NAME,
+    c.CUST_LAST_NAME,
+      COUNT(o.ORDER_ID) as order_count,
+    row_number() OVER (ORDER BY COUNT(o.ORDER_ID) DESC) as row_num
+FROM demo_customers c
+JOIN demo_orders o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+GROUP BY c.CUSTOMER_ID, c.CUST_FIRST_NAME, c.CUST_LAST_NAME
+    )
+where row_num <= 3;
+
+
+3. Top 3 products based on quantity sold.
+
+	select * from (
+select 
+    p.PRODUCT_NAME,
+    SUM(oi.QUANTITY) AS TOTAL_QUANTITY_SOLD,
+    DENSE_RANK() OVER (ORDER BY SUM(oi.QUANTITY) DESC) as dense_rank
+FROM demo_order_items oi
+JOIN demo_products p on oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY p.PRODUCT_NAME
+)
+    where dense_rank <= 3;
+
+
+4. Write a query to capture the customer's last name, product names (he bought) and total quantity of each of them.
+
+	select 
+    c.CUSTOMER_ID,
+    p.PRODUCT_NAME,
+    c.CUST_LAST_NAME,
+    SUM(oi.QUANTITY) AS total_quantity,
+    DENSE_RANK() OVER (PARTITION BY c.CUSTOMER_ID ORDER BY SUM(oi.QUANTITY) DESC) as dense_rank
+FROM demo_customers c
+JOIN demo_orders o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+JOIN demo_order_items oi ON o.ORDER_ID = oi.ORDER_ID
+JOIN demo_products p ON oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY p.PRODUCT_NAME,c.CUST_LAST_NAME,c.CUSTOMER_ID
+
+
+5. Transform the rows to columns for the result you get from Query # 4 above.
+
+	 select * from (   
+    select 
+    c.CUSTOMER_ID,
+    p.PRODUCT_NAME,
+    c.CUST_LAST_NAME,
+    SUM(oi.QUANTITY) AS total_quantity,
+    DENSE_RANK() OVER (PARTITION BY c.CUSTOMER_ID ORDER BY SUM(oi.QUANTITY) DESC) as dense_rank
+FROM demo_customers c
+JOIN demo_orders o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+JOIN demo_order_items oi ON o.ORDER_ID = oi.ORDER_ID
+JOIN demo_products p ON oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY p.PRODUCT_NAME,c.CUST_LAST_NAME,c.CUSTOMER_ID
+)
+PIVOT (
+    SUM(total_quantity) 
+    FOR PRODUCT_NAME IN ('Business Shirt', 'Trousers', 'Jacket', 'Blouse', 'Skirt', 'Ladies Shoes', 'Belt', 'Bag', 'Mens Shoes', 'Wallet')
+)	
+
+
+
+6. Which year had most orders?
+
+	select * from (
+select
+    extract(YEAR FROM o.ORDER_TIMESTAMP) as order_year,
+    COUNT(o.ORDER_ID) as order_count,
+    RANK() OVER (ORDER BY COUNT(o.ORDER_ID) DESC) AS rank
+FROM demo_orders o
+GROUP BY EXTRACT(YEAR FROM o.ORDER_TIMESTAMP)
+    
+)
+where rank = 1;
+
+
+7. Draw an ER (entity-relationship) model for this database depicting tables, PK and FK (i.e., relationships between them) on a plain paper using pen/pencil. Share the screenshot (ensure picture is clearly visible) and share.
+
+	Tables: 1) demo_states, 2) demo_customers, 3) demo_orders, 4) demo_products, and 5) demo_order_items
+
+Primary Keys (PK):
+demo_states: st
+demo_customers: customer_id
+demo_orders: order_id
+demo_products: product_id
+demo_order_items: order_item_id
+
+Foreign Keys (FK):
+demo_orders: customer_id (FK referencing demo_customers)
+demo_order_items: order_id (FK referencing demo_orders), product_id (FK referencing demo_products)
+
+
+8. Which product category was most sold?
+
+	select * from (
+ select 
+    p.CATEGORY,
+    sum(oi.QUANTITY) as total_quntity_sell,
+    row_number() OVER (ORDER BY SUM(oi.QUANTITY) DESC) as row_num
+FROM demo_order_items oi
+JOIN demo_products p ON oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY p.CATEGORY
+    )
+where row_num = 1;
+
+
+
+9. Which product category took the second position in terms of quantity sold?
+
+	select * from (
+    select 
+    p.CATEGORY,
+    sum(oi.QUANTITY) as total_quntity_sell,
+    row_number() OVER (ORDER BY SUM(oi.QUANTITY) DESC) as row_num
+FROM demo_order_items oi
+JOIN demo_products p ON oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY p.CATEGORY
+    )
+where row_num = 2;
+
+
+
+10. Write a query to help rollup total quantity on customer and product (name)
+
+	select * from (
+    select
+    c.CUSTOMER_ID,
+    c.CUST_FIRST_NAME,
+    c.CUST_LAST_NAME,
+    p.PRODUCT_NAME,
+    SUM(oi.QUANTITY) as total_quntity,
+    DENSE_RANK() OVER (PARTITION BY c.CUSTOMER_ID ORDER BY SUM(oi.QUANTITY) DESC) as dense_rank
+FROM demo_customers c
+JOIN demo_orders o ON c.CUSTOMER_ID = o.CUSTOMER_ID
+JOIN demo_order_items oi ON o.ORDER_ID = oi.ORDER_ID
+JOIN demo_products p ON oi.PRODUCT_ID = p.PRODUCT_ID
+GROUP BY CUBE (c.CUSTOMER_ID,c.CUST_FIRST_NAME, c.CUST_LAST_NAME, p.PRODUCT_NAME)
+    )
+where dense_rank <= 3;
+
